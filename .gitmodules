@@ -1,0 +1,3 @@
+[submodule "lcapy"]
+	path = lcapy
+	url = https://github.com/PalePrime/lcapy.git

@@ -16,17 +16,20 @@ With one exception, the Lcapy package, all software packages needed for exercise
 
 ## Steps after installing git and Python
 
-Open a new shell/command promt (to make sure git, pip, etc are found on the PATH), create a new directory, and clone this repository:
+Open a new shell/command promt (to make sure git, pip, etc are found on the PATH) and clone this repository:
 
     git clone https://github.com/PalePrime/eita10.git
-    git submodule --init update
+
+This creates a subdirectory called eita10. Move down into this subdirectory and let that be the default directory for the following commands. First recursively init and update submodules:
+
+    git submodule update --init
 
 Install Python packages, including the modified Lcapy:
 
     pip install -r requirements.txt
     pip install -e ./lcapy
 
-The second command builds and installs the modified Lcapy package. You may want to go into the lcapy directory and manually remove the subdirectory "build" to clean up afterwards ()
+The second command builds and installs the modified Lcapy package.
 
 ## Supporting schematic diagrams
 

@@ -35,7 +35,7 @@ The second command builds and installs the modified Lcapy package.
 
 To produce schematic diagrams Lcapy needs to have LaTeX, the CircuiTikZ package, and either GhostScript or ImageMagick installed.
 
-The TeX Live 2021 distribution from https://tug.org/texlive/ works on all platforms and has an interactive package manager that can pull in CircuiTikZ.
+The TeX Live 2021 distribution from https://tug.org/texlive/ works on all platforms and has an interactive package manager that can pull in CircuiTikZ. It is, however, a bulky install and may take hours to complete(!).
 
 ImageMagick is also available for all platforms from https://imagemagick.org/index.php
 
@@ -75,9 +75,9 @@ We will use Python mostly for scripting and calling library code, you may want t
 
 For general documentation for notebooks look at https://jupyter.org/ and its Python kernel (engine) at https://ipython.org/
 
-The Lcapy package provides really powerfull tools for mathematical modelling of electronic circuits see https://lcapy.readthedocs.io/en/latest/index.html a brief introduction is found at https://blog.ouseful.info/2018/08/07/an-easier-approach-to-electrical-circuit-diagram-generation-lcapy/
+The Lcapy package provides really powerful tools for mathematical modelling of electronic circuits see https://lcapy.readthedocs.io/en/latest/index.html a brief introduction is found at https://blog.ouseful.info/2018/08/07/an-easier-approach-to-electrical-circuit-diagram-generation-lcapy/
 
-Two Python packages provide the underlaying mathematical foundations for Lcapy, Numpy https://numpy.org/doc/stable/index.html for numerical computation and SymPy https://www.sympy.org/en/index.html for symbolic math.
+Two Python packages provide the underlying mathematical foundations for Lcapy, Numpy https://numpy.org/doc/stable/index.html for numerical computation and SymPy https://www.sympy.org/en/index.html for symbolic math.
 
 For plotting we rely on Matplotlib https://matplotlib.org/stable/index.html#
 

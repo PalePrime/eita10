@@ -26,61 +26,74 @@ import ctypes
 import sounddevice as sd
 import numpy as np
 
-stop_recorder = mp.Event()
-data_updated  = mp.Event()
-live_count    = mp.Value(ctypes.c_long, 0)
-data_lock     = mp.RLock()
-proc          = None
-max_samples   = 96000 * 5        # 5 seconds of data at 96000 Hz sampling
-max_bytes     = max_samples * 2  # two bytes per 16-bit sample
+class Liverecorder:
+    stop_recorder = mp.Event()
+    data_updated  = mp.Event()
+    live_count    = mp.Value(ctypes.c_long, 0)
+    data_lock     = mp.RLock()
+    messages      = mp.Queue()
+    proc          = None
+    max_samples   = 0
+    max_bytes     = 0
 
-shared_buffer = mp.RawArray(ctypes.c_byte, max_bytes)
+    shared_buffer = None
 
-def live_recorder(in_device, samplerate, stop_recorder, data_updated, live_count, data_lock, shared_buffer):
-    stream_data   = np.ndarray((max_samples,), dtype=np.int16, buffer=shared_buffer)
-    stream_data[0] = 42
-    def _callback(indata, frames, time, status):
-        if status.input_overflow:
-            raise Exception("overflow")
-        with data_lock:
-            stream_data[:-frames] = stream_data[frames:]
-            stream_data[-frames:] = indata[:,0]
-            live_count.value += frames
+    def __init__(self, max_seconds, max_rate):
+        self.max_samples = max_seconds * max_rate
+        self.max_bytes = self.max_samples * 2
+        self.shared_buffer = mp.RawArray(ctypes.c_byte, self.max_bytes)
+
+    def _live_recorder(self, in_device, samplerate, stop_recorder, data_updated, live_count, data_lock, shared_buffer, messages):
+        stream_data   = np.ndarray((self.max_samples,), dtype=np.int16, buffer=shared_buffer)
+        def _callback(indata, frames, _, status):
+            if status.input_overflow:
+                raise Exception("Buffer overflow")
+            with data_lock:
+                stream_data[:-frames] = stream_data[frames:]
+                stream_data[-frames:] = indata[:,0]
+                live_count.value += frames
+                data_updated.set()
+        try:
+            messages.put("Started live capture")
+            with sd.InputStream(device=in_device, channels=1,
+                                callback=_callback,
+                                blocksize=100, dtype=np.int16,
+                                samplerate=samplerate):
+                stop_recorder.wait()
+            messages.put("Capture ended normally")
+        except Exception as err:
+            messages.put(f"Capture failed, {err} occurred")
+        finally:
             data_updated.set()
 
-    with sd.InputStream(device=in_device, channels=1,
-                        callback=_callback,
-                        blocksize=100, dtype=np.int16,
-                        samplerate=samplerate):
-            stop_recorder.wait()
+    def get_data(self):
+        with self.data_lock:
+            count = self.live_count.value
+            self.live_count.value = 0
+            data = np.ndarray((self.max_samples,), dtype=np.int16, buffer=self.shared_buffer).copy()
+            self.data_updated.clear()
+        return (data, count)
 
-def get_data():
-    with data_lock:
-        count = live_count.value
-        live_count.value = 0
-        data = np.ndarray((max_samples,), dtype=np.int16, buffer=shared_buffer).copy()
-        data_updated.clear()
-    return (data, count)
+    def get_update_event(self):
+        return self.data_updated
 
-def get_update_event():
-    return data_updated
+    def running(self):
+        if self.proc:
+            return self.proc.is_alive()
+        else:
+            return False
 
-def running():
-    if proc:
-        return proc.is_alive()
-    else:
-        return False
+    def stop(self):
+        self.stop_recorder.set()
+        if self.proc:
+            self.proc.join()
 
-def stop():
-    stop_recorder.set()
-    if proc:
-        proc.join()
-
-def start(in_device, samplerate):
-    global proc
-    stop()
-    stop_recorder.clear()
-    proc = mp.Process(target=live_recorder,
-                      args=(in_device, samplerate, stop_recorder, data_updated, live_count, data_lock, shared_buffer),
-                      daemon=True)
-    proc.start()
+    def start(self, in_device, samplerate):
+        self.stop()
+        self.stop_recorder.clear()
+        self.messages.put("Will start live capture")
+        self.proc = mp.Process(target=self._live_recorder,
+                          args=(in_device, samplerate, self.stop_recorder, self.data_updated, 
+                                self.live_count, self.data_lock, self.shared_buffer, self.messages),
+                          daemon=True)
+        self.proc.start()

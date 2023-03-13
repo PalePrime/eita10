@@ -44,7 +44,9 @@ class Liverecorder:
         self.shared_buffer = mp.RawArray(ctypes.c_byte, self.max_bytes)
 
     def _live_recorder(self, in_device, samplerate, stop_recorder, data_updated, live_count, data_lock, shared_buffer, messages):
-        stream_data   = np.ndarray((self.max_samples,), dtype=np.int16, buffer=shared_buffer)
+        with data_lock:
+            stream_data    = np.ndarray((self.max_samples,), dtype=np.int16, buffer=shared_buffer)
+            stream_data[:] = 0
         def _callback(indata, frames, _, status):
             if status.input_overflow:
                 raise Exception("Buffer overflow")

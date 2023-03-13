@@ -16,6 +16,8 @@ Open a new shell/command promt (to make sure git, pip, etc are found on the PATH
 
     git clone https://github.com/PalePrime/eita10.git
 
+This command creates a new directory called "eita10". Move down into this directory and let it be the default directory for all subsequent commands.
+
 Install the required Python packages:
 
     pip install jupyterlab ipympl lcapy sounddevice
